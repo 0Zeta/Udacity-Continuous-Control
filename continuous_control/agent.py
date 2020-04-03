@@ -12,10 +12,11 @@ import torch.optim as optim
 BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
-TAU = 5e-3              # for soft update of target parameters
-LR_ACTOR = 3e-4         # learning rate of the actor
-LR_CRITIC = 3e-3        # learning rate of the critic
+TAU = 1e-3              # for soft update of target parameters
+LR_ACTOR = 1e-4         # learning rate of the actor
+LR_CRITIC = 1e-3        # learning rate of the critic
 LEARN_EVERY = 1         # learn every LEARN_EVERY steps
+LEARN_NB = 1            # how often to execute the learn-function each LEARN_EVERY steps
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -47,11 +48,19 @@ class Agent(object):
         self.critic_target = Critic(state_size, action_size, random_seed).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC)
 
+        self.copy_weights(self.critic_local, self.critic_target)
+        self.copy_weights(self.actor_local, self.actor_target)
+
         # Noise process
-        self.noise = OUNoise(action_size, random_seed)
+        self.noise = OUNoise((20 * action_size), random_seed)
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
+
+    def copy_weights(self, source, target):
+        """Copies the weights from the source to the target"""
+        for target_param, source_param in zip(target.parameters(), source.parameters()):
+            target_param.data.copy_(source_param.data)
 
     def step(self, states, actions, rewards, next_states, dones):
         """Save experience in replay memory, and use random sample from buffer to learn."""
@@ -62,10 +71,11 @@ class Agent(object):
         self.i_learn = (self.i_learn + 1) % LEARN_EVERY
         # Learn every LEARN_EVERY steps if enough samples are available in memory
         if len(self.memory) > BATCH_SIZE and self.i_learn == 0:
-            experiences = self.memory.sample()
-            self.learn(experiences, GAMMA)
+            for _ in range(LEARN_NB):
+                experiences = self.memory.sample()
+                self.learn(experiences, GAMMA)
 
-    def act(self, state, add_noise=True):
+    def act(self, state, add_noise=True, noise_scale=1.0):
         """Returns actions for given state as per current policy."""
         state = torch.from_numpy(state).float().to(device)
         self.actor_local.eval()
@@ -73,7 +83,7 @@ class Agent(object):
             action = self.actor_local(state).cpu().data.numpy()
         self.actor_local.train()
         if add_noise:
-            action += self.noise.sample()
+            action += noise_scale * np.reshape(self.noise.sample(), newshape=(-1, 4))
         return np.clip(action, -1, 1)
 
     def reset(self):
@@ -97,10 +107,10 @@ class Agent(object):
         # Get predicted next-state actions and Q values from target models
         actions_next = self.actor_target(next_states)
         Q_targets_next = self.critic_target(next_states, actions_next)
-        # Current expected Q-values
-        Q_expected = self.critic_local(states, actions)
         # Compute Q targets for current states (y_i)
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
+        # Current expected Q-values
+        Q_expected = self.critic_local(states, actions)
         # Compute critic loss
         critic_loss = F.mse_loss(Q_expected, Q_targets)
         # Minimize the loss
@@ -145,7 +155,6 @@ class OUNoise:
         self.theta = theta
         self.sigma = sigma
         self.seed = random.seed(seed)
-        self.state = None
         self.reset()
 
     def reset(self):

@@ -28,25 +28,22 @@ class Actor(nn.Module):
         self.bn1 = nn.BatchNorm1d(state_size)
         self.fc1 = nn.Linear(state_size, 128)
         self.bn2 = nn.BatchNorm1d(128)
-        self.fc2 = nn.Linear(128, 64)
-        self.bn3 = nn.BatchNorm1d(64)
-        self.fc3 = nn.Linear(64, 32)
-        self.bn4 = nn.BatchNorm1d(32)
-        self.fc4 = nn.Linear(32, action_size)
+        self.fc2 = nn.Linear(128, 128)
+        self.bn3 = nn.BatchNorm1d(128)
+        self.fc3 = nn.Linear(128, action_size)
         self.reset_parameters()
 
     def reset_parameters(self):
         self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
         self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
-        self.fc3.weight.data.uniform_(*hidden_init(self.fc3))
-        self.fc4.weight.data.uniform_(-3e-3, 3e-3)
+        self.fc3.weight.data.uniform_(-3e-3, 3e-3)
 
     def forward(self, state):
         """Build an actor (policy) network that maps states -> actions."""
-        x = F.relu(self.fc1(self.bn1(state)))
-        x = F.relu(self.fc2(self.bn2(x)))
-        x = F.relu(self.fc3(self.bn3(x)))
-        return torch.tanh(self.fc4(self.bn4(x)))
+        x = F.relu(self.fc1(state))
+        x = self.bn2(x)
+        x = F.relu(self.fc2(x))
+        return torch.tanh(self.fc3(x))
 
 
 class Critic(nn.Module):
@@ -66,22 +63,19 @@ class Critic(nn.Module):
         self.fcs1 = nn.Linear(state_size, 128)
         self.bn2 = nn.BatchNorm1d(128+action_size)
         self.fc2 = nn.Linear(128+action_size, 128)
-        self.bn3 = nn.BatchNorm1d(128)
-        self.fc3 = nn.Linear(128, 64)
-        self.bn4 = nn.BatchNorm1d(64)
-        self.fc4 = nn.Linear(64, 1)
+        # self.bn3 = nn.BatchNorm1d(128)
+        self.fc3 = nn.Linear(128, 1)
         self.reset_parameters()
 
     def reset_parameters(self):
         self.fcs1.weight.data.uniform_(*hidden_init(self.fcs1))
         self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
-        self.fc3.weight.data.uniform_(*hidden_init(self.fc3))
-        self.fc4.weight.data.uniform_(-3e-3, 3e-3)
+        self.fc3.weight.data.uniform_(-3e-3, 3e-3)
 
     def forward(self, state, action):
         """Build a critic (value) network that maps (state, action) pairs -> Q-values."""
-        xs = F.relu(self.fcs1(self.bn1(state)))
+        xs = F.relu(self.fcs1(state))
         x = torch.cat((xs, action), dim=1)
-        x = F.relu(self.fc2(self.bn2(x)))
-        x = F.relu(self.fc3(self.bn3(x)))
-        return self.fc4(self.bn4(x))
+        x = self.bn2(x)
+        x = F.relu(self.fc2(x))
+        return self.fc3(x)
