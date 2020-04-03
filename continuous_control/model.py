@@ -25,10 +25,10 @@ class Actor(nn.Module):
         """
         super(Actor, self).__init__()
         self.seed = torch.manual_seed(seed)
-        self.fc1 = nn.Linear(state_size, 256)
-        self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, 64)
-        self.fc4 = nn.Linear(64, action_size)
+        self.fc1 = nn.Linear(state_size, 128)
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 32)
+        self.fc4 = nn.Linear(32, action_size)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -58,10 +58,10 @@ class Critic(nn.Module):
         """
         super(Critic, self).__init__()
         self.seed = torch.manual_seed(seed)
-        self.fcs1 = nn.Linear(state_size, 256)
-        self.fc2 = nn.Linear(256+action_size, 200)
-        self.fc3 = nn.Linear(200, 128)
-        self.fc4 = nn.Linear(128, 1)
+        self.fcs1 = nn.Linear(state_size, 128)
+        self.fc2 = nn.Linear(128+action_size, 128)
+        self.fc3 = nn.Linear(128, 64)
+        self.fc4 = nn.Linear(64, 1)
         self.reset_parameters()
 
     def reset_parameters(self):
