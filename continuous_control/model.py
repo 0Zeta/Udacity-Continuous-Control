@@ -27,9 +27,7 @@ class Actor(nn.Module):
         self.seed = torch.manual_seed(seed)
         self.bn1 = nn.BatchNorm1d(state_size)
         self.fc1 = nn.Linear(state_size, 128)
-        self.bn2 = nn.BatchNorm1d(128)
         self.fc2 = nn.Linear(128, 128)
-        self.bn3 = nn.BatchNorm1d(128)
         self.fc3 = nn.Linear(128, action_size)
         self.reset_parameters()
 
@@ -42,9 +40,7 @@ class Actor(nn.Module):
         """Build an actor (policy) network that maps states -> actions."""
         x = self.bn1(state)
         x = F.leaky_relu(self.fc1(x))
-        # x = self.bn2(x)
         x = F.leaky_relu(self.fc2(x))
-        # x = self.bn3(x)
         return torch.tanh(self.fc3(x))
 
 
@@ -63,9 +59,7 @@ class Critic(nn.Module):
         self.seed = torch.manual_seed(seed)
         self.bn1 = nn.BatchNorm1d(state_size)
         self.fcs1 = nn.Linear(state_size, 128)
-        self.bn2 = nn.BatchNorm1d(128+action_size)
         self.fc2 = nn.Linear(128+action_size, 128)
-        self.bn3 = nn.BatchNorm1d(128)
         self.fc3 = nn.Linear(128, 1)
         self.reset_parameters()
 
@@ -79,7 +73,5 @@ class Critic(nn.Module):
         xs = self.bn1(state)
         xs = F.leaky_relu(self.fcs1(xs))
         x = torch.cat((xs, action), dim=1)
-        # x = self.bn2(x)
         x = F.leaky_relu(self.fc2(x))
-        #x  = self.bn3(x)
         return self.fc3(x)
