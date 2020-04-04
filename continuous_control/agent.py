@@ -10,12 +10,12 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 BUFFER_SIZE = int(1e6)  # replay buffer size
-BATCH_SIZE = 128        # minibatch size
+BATCH_SIZE = 256        # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor
 LR_CRITIC = 1e-3        # learning rate of the critic
-LEARN_EVERY = 1         # learn every LEARN_EVERY steps
+LEARN_EVERY = 2         # learn every LEARN_EVERY steps
 LEARN_NB = 1            # how often to execute the learn-function each LEARN_EVERY steps
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -52,7 +52,7 @@ class Agent(object):
         self.copy_weights(self.actor_local, self.actor_target)
 
         # Noise process
-        self.noise = OUNoise((20 * action_size), random_seed)
+        self.noise = OUNoise(20 * action_size, random_seed)
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
@@ -75,7 +75,7 @@ class Agent(object):
                 experiences = self.memory.sample()
                 self.learn(experiences, GAMMA)
 
-    def act(self, state, add_noise=True, noise_scale=1.0):
+    def act(self, state, add_noise=True, noise_factor=1.0):
         """Returns actions for given state as per current policy."""
         state = torch.from_numpy(state).float().to(device)
         self.actor_local.eval()
@@ -83,7 +83,7 @@ class Agent(object):
             action = self.actor_local(state).cpu().data.numpy()
         self.actor_local.train()
         if add_noise:
-            action += noise_scale * np.reshape(self.noise.sample(), newshape=(-1, 4))
+            action += noise_factor * self.noise.sample().reshape((-1, 4))
         return np.clip(action, -1, 1)
 
     def reset(self):
