@@ -29,7 +29,7 @@ The environment is considered solved, when the average (over 100 episodes) of th
 
 ### Getting Started
 
-1. Clone [this repository](https://github.com/0Zeta/Udacity-Navigation) and install the dependencies specified in the official [DRLND-repository](https://github.com/udacity/deep-reinforcement-learning#dependencies)
+1. Clone [this repository](https://github.com/0Zeta/Udacity-Continuous-Control) and install the dependencies specified in the official [DRLND-repository](https://github.com/udacity/deep-reinforcement-learning#dependencies)
 
 2. Download the environment from one of the links below.  You need only select the environment that matches your operating system:
 
